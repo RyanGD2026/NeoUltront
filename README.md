@@ -39,6 +39,9 @@ cargo test
 - Click-to-add outline points on the glyph canvas
 - Quadratic and cubic Bézier segment tools
 - Visible Bézier control-handle guide lines
+- Click-to-select existing anchor points and Bézier control handles
+- Drag selected anchors and control handles directly on the glyph canvas
+- Live selected-node highlight while editing
 - Close-contour and undo-last-command controls
 - Live SVG-path rendering of the selected glyph
 - Editable family-name field
@@ -47,7 +50,7 @@ cargo test
 - Export the selected glyph outline to a standalone SVG file
 - Status messages for project operations
 
-The glyph canvas now supports basic polygon-outline construction by clicking points, closing contours, and undoing the last outline command. Direct dragging of existing nodes/handles, zoom/pan, and live font shaping are not implemented yet. Bézier curves can be drawn with the Quadratic and Cubic tools by clicking the required control points and endpoint.
+The glyph canvas now supports basic polygon-outline construction by clicking points, closing contours, and undoing the last outline command. Zoom/pan, multi-selection, keyboard editing shortcuts, and live font shaping are not implemented yet. Bézier curves can be drawn with the Quadratic and Cubic tools by clicking the required control points and endpoint; existing anchors and handles can be selected and dragged.
 
 ## CLI commands
 
