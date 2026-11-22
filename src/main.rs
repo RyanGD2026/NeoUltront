@@ -72,6 +72,57 @@ fn glyph_handles_to_svg_path(glyph: &Glyph) -> String {
     path
 }
 
+
+fn command_point(command: &GlyphCommand, slot: u8) -> Option<GlyphPoint> {
+    match (command, slot) {
+        (GlyphCommand::MoveTo(p) | GlyphCommand::LineTo(p), 0) => Some(*p),
+        (GlyphCommand::QuadTo(control, end), 0) => Some(*control),
+        (GlyphCommand::QuadTo(_, end), 1) => Some(*end),
+        (GlyphCommand::CubicTo(c1, _, _), 0) => Some(*c1),
+        (GlyphCommand::CubicTo(_, c2, _), 1) => Some(*c2),
+        (GlyphCommand::CubicTo(_, _, end), 2) => Some(*end),
+        _ => None,
+    }
+}
+
+fn set_command_point(command: &mut GlyphCommand, slot: u8, point: GlyphPoint) -> bool {
+    match (command, slot) {
+        (GlyphCommand::MoveTo(p) | GlyphCommand::LineTo(p), 0) => *p = point,
+        (GlyphCommand::QuadTo(p, _), 0) => *p = point,
+        (GlyphCommand::QuadTo(_, p), 1) => *p = point,
+        (GlyphCommand::CubicTo(p, _, _), 0) => *p = point,
+        (GlyphCommand::CubicTo(_, p, _), 1) => *p = point,
+        (GlyphCommand::CubicTo(_, _, p), 2) => *p = point,
+        _ => return false,
+    }
+    true
+}
+
+fn nearest_glyph_point(glyph: &Glyph, point: GlyphPoint, tolerance: f32) -> Option<(usize, u8)> {
+    let mut nearest = None;
+    let mut best_distance = tolerance * tolerance;
+    for (command_index, command) in glyph.outline.iter().enumerate() {
+        let slots = match command {
+            GlyphCommand::MoveTo(_) | GlyphCommand::LineTo(_) => 1,
+            GlyphCommand::QuadTo(_, _) => 2,
+            GlyphCommand::CubicTo(_, _, _) => 3,
+            GlyphCommand::Close => 0,
+        };
+        for slot in 0..slots {
+            if let Some(candidate) = command_point(command, slot) {
+                let dx = candidate.x - point.x;
+                let dy = candidate.y - point.y;
+                let distance = dx * dx + dy * dy;
+                if distance <= best_distance {
+                    best_distance = distance;
+                    nearest = Some((command_index, slot));
+                }
+            }
+        }
+    }
+    nearest
+}
+
 fn refresh_selected_glyph(ui: &MainWindow, project: &NeoFontProject) {
     let selected = ui.get_selected_glyph().to_string();
     let path = project
@@ -116,6 +167,8 @@ fn main() -> Result<(), slint::PlatformError> {
     let project = Rc::new(RefCell::new(NeoFontProject::new("Untitled Font")));
     let outline_tool = Rc::new(RefCell::new(OutlineTool::Line));
     let pending_curve_points = Rc::new(RefCell::new(Vec::<GlyphPoint>::new()));
+    let selected_node = Rc::new(RefCell::new(None::<(usize, u8)>));
+    let node_drag_active = Rc::new(RefCell::new(false));
     let glyph_model = Rc::new(VecModel::from(vec![
         SharedString::from(".notdef"),
         SharedString::from("A"),
@@ -287,6 +340,63 @@ fn main() -> Result<(), slint::PlatformError> {
             pending.borrow_mut().clear();
             if let Some(ui) = weak_ui.upgrade() { ui.set_status_message(format!("Outline tool: {name}").into()); }
         });
+    }
+
+    {
+        let weak_ui = ui.as_weak();
+        let project = Rc::clone(&project);
+        let selected_node = Rc::clone(&selected_node);
+        let dragging = Rc::clone(&node_drag_active);
+        ui.on_canvas_pointer_pressed(move |x, y| {
+            let Some(ui) = weak_ui.upgrade() else { return };
+            let selected = ui.get_selected_glyph().to_string();
+            let point = GlyphPoint { x: x.clamp(0.0, 1000.0), y: y.clamp(0.0, 1000.0) };
+            let project = project.borrow();
+            let hit = project.glyphs.get(&selected)
+                .and_then(|glyph| nearest_glyph_point(glyph, point, 32.0));
+            *selected_node.borrow_mut() = hit;
+            *dragging.borrow_mut() = hit.is_some();
+            if let Some((command_index, slot)) = hit {
+                if let Some(glyph) = project.glyphs.get(&selected) {
+                    if let Some(node) = glyph.outline.get(command_index).and_then(|c| command_point(c, slot)) {
+                        ui.set_selected_node_x(node.x);
+                        ui.set_selected_node_y(node.y);
+                        ui.set_node_selected(true);
+                        ui.set_status_message(format!("Selected node {}:{}", command_index + 1, slot + 1).into());
+                    }
+                }
+            } else {
+                ui.set_node_selected(false);
+            }
+        });
+    }
+
+    {
+        let weak_ui = ui.as_weak();
+        let project = Rc::clone(&project);
+        let selected_node = Rc::clone(&selected_node);
+        let dragging = Rc::clone(&node_drag_active);
+        ui.on_canvas_pointer_moved(move |x, y| {
+            if !*dragging.borrow() { return; }
+            let Some(ui) = weak_ui.upgrade() else { return };
+            let selected = ui.get_selected_glyph().to_string();
+            let Some((command_index, slot)) = *selected_node.borrow() else { return };
+            let point = GlyphPoint { x: x.clamp(0.0, 1000.0).round(), y: y.clamp(0.0, 1000.0).round() };
+            let mut project = project.borrow_mut();
+            let Some(glyph) = project.glyphs.get_mut(&selected) else { return };
+            let Some(command) = glyph.outline.get_mut(command_index) else { return };
+            if set_command_point(command, slot, point) {
+                ui.set_glyph_path(glyph_to_svg_path(glyph).into());
+                ui.set_glyph_handles_path(glyph_handles_to_svg_path(glyph).into());
+                ui.set_selected_node_x(point.x);
+                ui.set_selected_node_y(point.y);
+            }
+        });
+    }
+
+    {
+        let dragging = Rc::clone(&node_drag_active);
+        ui.on_canvas_pointer_released(move || { *dragging.borrow_mut() = false; });
     }
 
     {
