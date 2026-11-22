@@ -138,6 +138,15 @@ impl NeoFontProject {
                 outline: Vec::new(),
             },
         );
+        glyphs.insert(
+            "A".to_owned(),
+            Glyph {
+                codepoint: Some('A'),
+                advance_width: 650.0,
+                left_side_bearing: 20.0,
+                outline: Vec::new(),
+            },
+        );
 
         Self {
             format: "NeoUltrontFontProject".to_owned(),
