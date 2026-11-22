@@ -12,6 +12,7 @@ export component MainWindow inherits Window {
     in-out property <string> glyph-name: "A";
     in-out property <string> selected-glyph: "A";
     in-out property <string> status-message: "Ready";
+    in-out property <string> glyph-path: "";
     in-out property <int> glyph-count: 2;
     in property <[string]> glyph-list;
     in-out property <int> units-per-em: 1000;
@@ -23,6 +24,9 @@ export component MainWindow inherits Window {
     callback save-requested();
     callback add-glyph-requested();
     callback glyph-selected(string);
+    callback canvas-point-added(float, float);
+    callback close-contour-requested();
+    callback undo-point-requested();
 
     VerticalLayout {
         spacing: 0px;
@@ -143,17 +147,28 @@ export component MainWindow inherits Window {
                                 background: #30425a;
                                 opacity: 0.8;
                             }
-                            Text {
-                                text: root.selected-glyph;
+                            Path {
                                 x: 0px;
                                 y: 0px;
                                 width: 100%;
                                 height: 100%;
-                                color: #eaf2ff;
-                                font-size: 300px;
-                                font-weight: 700;
-                                horizontal-alignment: center;
-                                vertical-alignment: center;
+                                viewbox-width: 1000;
+                                viewbox-height: 1000;
+                                commands: root.glyph-path;
+                                fill-rule: evenodd;
+                                fill: #eaf2ff;
+                                stroke: #76aaff;
+                                stroke-width: 8px;
+                            }
+                            TouchArea {
+                                width: 100%;
+                                height: 100%;
+                                clicked => {
+                                    root.canvas-point-added(
+                                        (self.mouse-x / self.width) * 1000,
+                                        1000 - ((self.mouse-y / self.height) * 1000)
+                                    );
+                                }
                             }
                             Text {
                                 text: "ASCENDER";
@@ -181,12 +196,10 @@ export component MainWindow inherits Window {
 
                     HorizontalLayout {
                         spacing: 18px;
-                        Text { text: "Move"; color: #9aa9bd; font-size: 11px; }
-                        Text { text: "Pen"; color: #9aa9bd; font-size: 11px; }
-                        Text { text: "Select"; color: #9aa9bd; font-size: 11px; }
-                        Text { text: "Zoom"; color: #9aa9bd; font-size: 11px; }
+                        Button { text: "Undo point"; clicked => root.undo-point-requested(); }
+                        Button { text: "Close contour"; clicked => root.close-contour-requested(); }
                         Rectangle { horizontal-stretch: 1; }
-                        Text { text: "Outline editing is the next milestone"; color: #66768d; font-size: 10px; }
+                        Text { text: "Click the canvas to add outline points"; color: #66768d; font-size: 10px; }
                     }
                 }
             }
