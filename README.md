@@ -35,13 +35,16 @@ cargo test
 
 - Dark three-panel font-editor workspace
 - Dynamic glyph list populated from the opened project
-- Glyph selection and new-glyph creation
+- Dynamic glyph selection and new-glyph creation
+- Click-to-add outline points on the glyph canvas
+- Close-contour and undo-last-command controls
+- Live SVG-path rendering of the selected glyph
 - Editable family-name field
 - Font metric overview (units per em, ascender, descender)
 - Native open/save dialogs for `.nufont` files
 - Status messages for project operations
 
-The center glyph area is currently a visual preview placeholder. Direct vector-outline editing, node manipulation, zoom/pan tools, and live font rendering are not implemented yet.
+The glyph canvas now supports basic polygon-outline construction by clicking points, closing contours, and undoing the last outline command. Dragging existing nodes, Bézier handle editing, zoom/pan, and live font shaping are not implemented yet.
 
 ## CLI commands
 
@@ -53,4 +56,4 @@ cargo run -- validate MyFont.nufont
 
 ## Development status
 
-The project model, `.nufont` JSON persistence, validation, desktop shell, and basic project workflow are in place. Font import, direct glyph-outline editing, shaping/preview, and TTF/OTF/WOFF2 export remain future milestones.
+The project model, `.nufont` JSON persistence, validation, desktop shell, project workflow, and first point-based outline editor are in place. Font import, advanced node/curve editing, shaping/preview, and TTF/OTF/WOFF2 export remain future milestones.
