@@ -13,6 +13,7 @@ export component MainWindow inherits Window {
     in-out property <string> selected-glyph: "A";
     in-out property <string> status-message: "Ready";
     in-out property <string> glyph-path: "";
+    in-out property <string> glyph-handles-path: "";
     in-out property <int> glyph-count: 2;
     in property <[string]> glyph-list;
     in-out property <int> units-per-em: 1000;
@@ -26,6 +27,7 @@ export component MainWindow inherits Window {
     callback add-glyph-requested();
     callback glyph-selected(string);
     callback canvas-point-added(float, float);
+    callback outline-tool-selected(string);
     callback close-contour-requested();
     callback undo-point-requested();
 
@@ -162,6 +164,14 @@ export component MainWindow inherits Window {
                                 stroke: #76aaff;
                                 stroke-width: 8px;
                             }
+                            Path {
+                                x: 0px; y: 0px; width: 100%; height: 100%;
+                                viewbox-width: 1000; viewbox-height: 1000;
+                                commands: root.glyph-handles-path;
+                                fill: transparent;
+                                stroke: #f4b860;
+                                stroke-width: 5px;
+                            }
                             TouchArea {
                                 width: 100%;
                                 height: 100%;
@@ -198,6 +208,9 @@ export component MainWindow inherits Window {
 
                     HorizontalLayout {
                         spacing: 18px;
+                        Button { text: "Line"; clicked => root.outline-tool-selected("line"); }
+                        Button { text: "Quadratic"; clicked => root.outline-tool-selected("quadratic"); }
+                        Button { text: "Cubic"; clicked => root.outline-tool-selected("cubic"); }
                         Button { text: "Undo point"; clicked => root.undo-point-requested(); }
                         Button { text: "Close contour"; clicked => root.close-contour-requested(); }
                         Rectangle { horizontal-stretch: 1; }
