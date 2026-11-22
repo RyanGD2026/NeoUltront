@@ -1,0 +1,252 @@
+import { Button, TextInput } from "std-widgets.slint";
+
+export component MainWindow inherits Window {
+    title: "NeoUltront 0.8.0";
+    width: 1360px;
+    height: 860px;
+    min-width: 1040px;
+    min-height: 680px;
+    background: #0b0e14;
+
+    in-out property <string> family-name: "Untitled Font";
+    in-out property <string> glyph-name: "A";
+    in-out property <string> selected-glyph: "A";
+    in-out property <string> status-message: "Ready";
+    in-out property <int> glyph-count: 1;
+    in-out property <int> units-per-em: 1000;
+    in-out property <int> ascender: 800;
+    in-out property <int> descender: -200;
+
+    callback new-requested();
+    callback open-requested();
+    callback save-requested();
+    callback add-glyph-requested();
+    callback glyph-selected(string);
+
+    VerticalLayout {
+        spacing: 0px;
+
+        Rectangle {
+            height: 64px;
+            background: #141a24;
+            HorizontalLayout {
+                padding-left: 20px;
+                padding-right: 18px;
+                spacing: 12px;
+
+                Rectangle {
+                    width: 34px;
+                    height: 34px;
+                    background: #2478f2;
+                    border-radius: 9px;
+                    Text {
+                        text: "N";
+                        color: #ffffff;
+                        font-size: 21px;
+                        font-weight: 800;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+                VerticalLayout {
+                    spacing: 1px;
+                    Text { text: "NeoUltront"; color: #f1f5fb; font-size: 17px; font-weight: 700; }
+                    Text { text: "FONT EDITOR  /  0.8.0"; color: #7d8ba1; font-size: 9px; letter-spacing: 1px; }
+                }
+                Rectangle { horizontal-stretch: 1; }
+                Button { text: "New"; clicked => root.new-requested(); }
+                Button { text: "Open"; clicked => root.open-requested(); }
+                Button { text: "Save"; clicked => root.save-requested(); }
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 0px;
+
+            Rectangle {
+                width: 224px;
+                background: #111721;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 12px;
+
+                    Text { text: "FONT"; color: #718198; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; }
+                    Text { text: root.family-name; color: #e8edf5; font-size: 16px; font-weight: 700; }
+                    Text { text: "GLYPHS  (" + root.glyph-count + ")"; color: #718198; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+                    Button { text: "A     LATIN CAPITAL A"; clicked => root.glyph-selected("A"); }
+                    Button { text: "B     LATIN CAPITAL B"; clicked => root.glyph-selected("B"); }
+                    Button { text: "C     LATIN CAPITAL C"; clicked => root.glyph-selected("C"); }
+                    Button { text: "a     LATIN SMALL A"; clicked => root.glyph-selected("a"); }
+                    Button { text: "b     LATIN SMALL B"; clicked => root.glyph-selected("b"); }
+                    Button { text: "zero  DIGIT ZERO"; clicked => root.glyph-selected("zero"); }
+                    Rectangle { height: 1px; background: #273142; }
+                    Button { text: "+  Add glyph"; clicked => root.add-glyph-requested(); }
+                    Rectangle { vertical-stretch: 1; }
+                    Text { text: "PROJECT FORMAT"; color: #718198; font-size: 9px; font-weight: 700; letter-spacing: 1px; }
+                    Text { text: ".nufont  /  v1"; color: #8da0ba; font-size: 11px; }
+                }
+            }
+
+            Rectangle {
+                horizontal-stretch: 1;
+                background: #0d1119;
+                VerticalLayout {
+                    padding: 20px;
+                    spacing: 14px;
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Text { text: root.selected-glyph; color: #f1f5fb; font-size: 23px; font-weight: 700; }
+                        Text { text: "GLYPH EDITOR"; color: #7e8da4; font-size: 10px; letter-spacing: 1.3px; vertical-alignment: center; }
+                        Rectangle { horizontal-stretch: 1; }
+                        Text { text: "100%"; color: #91a0b6; font-size: 11px; vertical-alignment: center; }
+                    }
+
+                    Rectangle {
+                        horizontal-stretch: 1;
+                        vertical-stretch: 1;
+                        background: #151c28;
+                        border-width: 1px;
+                        border-color: #293448;
+                        border-radius: 8px;
+
+                        Rectangle {
+                            x: 8%;
+                            y: 8%;
+                            width: 84%;
+                            height: 84%;
+                            background: #121925;
+                            border-width: 1px;
+                            border-color: #273448;
+                            border-radius: 4px;
+
+                            Rectangle {
+                                x: 0px;
+                                y: 20%;
+                                width: 100%;
+                                height: 1px;
+                                background: #30425a;
+                                opacity: 0.8;
+                            }
+                            Rectangle {
+                                x: 0px;
+                                y: 80%;
+                                width: 100%;
+                                height: 1px;
+                                background: #4b6686;
+                                opacity: 0.9;
+                            }
+                            Rectangle {
+                                x: 0px;
+                                y: 90%;
+                                width: 100%;
+                                height: 1px;
+                                background: #30425a;
+                                opacity: 0.8;
+                            }
+                            Text {
+                                text: root.selected-glyph;
+                                x: 0px;
+                                y: 0px;
+                                width: 100%;
+                                height: 100%;
+                                color: #eaf2ff;
+                                font-size: 300px;
+                                font-weight: 700;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                            Text {
+                                text: "ASCENDER";
+                                x: 8px;
+                                y: 20% - 18px;
+                                color: #7187a4;
+                                font-size: 9px;
+                            }
+                            Text {
+                                text: "BASELINE";
+                                x: 8px;
+                                y: 80% - 18px;
+                                color: #7187a4;
+                                font-size: 9px;
+                            }
+                            Text {
+                                text: "DESCENDER";
+                                x: 8px;
+                                y: 90% - 18px;
+                                color: #7187a4;
+                                font-size: 9px;
+                            }
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 18px;
+                        Text { text: "Move"; color: #9aa9bd; font-size: 11px; }
+                        Text { text: "Pen"; color: #9aa9bd; font-size: 11px; }
+                        Text { text: "Select"; color: #9aa9bd; font-size: 11px; }
+                        Text { text: "Zoom"; color: #9aa9bd; font-size: 11px; }
+                        Rectangle { horizontal-stretch: 1; }
+                        Text { text: "Outline editing is the next milestone"; color: #66768d; font-size: 10px; }
+                    }
+                }
+            }
+
+            Rectangle {
+                width: 276px;
+                background: #111721;
+                VerticalLayout {
+                    padding: 16px;
+                    spacing: 12px;
+
+                    Text { text: "FONT PROPERTIES"; color: #718198; font-size: 10px; font-weight: 700; letter-spacing: 1.2px; }
+                    Text { text: "Family name"; color: #9baac0; font-size: 11px; }
+                    TextInput {
+                        text: root.family-name;
+                        edited => { root.family-name = self.text; }
+                    }
+                    Rectangle { height: 1px; background: #273142; }
+                    Text { text: "GLYPH PROPERTIES"; color: #718198; font-size: 10px; font-weight: 700; letter-spacing: 1.2px; }
+                    Text { text: "Glyph name"; color: #9baac0; font-size: 11px; }
+                    TextInput {
+                        text: root.glyph-name;
+                        edited => { root.glyph-name = self.text; }
+                    }
+                    Text { text: "Selected glyph"; color: #9baac0; font-size: 11px; }
+                    Text { text: root.selected-glyph; color: #eaf2ff; font-size: 20px; font-weight: 700; }
+                    Rectangle { height: 1px; background: #273142; }
+                    Text { text: "FONT METRICS"; color: #718198; font-size: 10px; font-weight: 700; letter-spacing: 1.2px; }
+                    HorizontalLayout {
+                        Text { text: "Units per em"; color: #9baac0; font-size: 11px; }
+                        Rectangle { horizontal-stretch: 1; }
+                        Text { text: root.units-per-em; color: #e1e9f5; font-size: 11px; }
+                    }
+                    HorizontalLayout {
+                        Text { text: "Ascender"; color: #9baac0; font-size: 11px; }
+                        Rectangle { horizontal-stretch: 1; }
+                        Text { text: root.ascender; color: #e1e9f5; font-size: 11px; }
+                    }
+                    HorizontalLayout {
+                        Text { text: "Descender"; color: #9baac0; font-size: 11px; }
+                        Rectangle { horizontal-stretch: 1; }
+                        Text { text: root.descender; color: #e1e9f5; font-size: 11px; }
+                    }
+                    Rectangle { vertical-stretch: 1; }
+                    Button { text: "Create glyph"; clicked => root.add-glyph-requested(); }
+                }
+            }
+        }
+
+        Rectangle {
+            height: 30px;
+            background: #141a24;
+            HorizontalLayout {
+                padding-left: 14px;
+                padding-right: 14px;
+                Text { text: root.status-message; color: #93a2b7; font-size: 10px; vertical-alignment: center; }
+                Rectangle { horizontal-stretch: 1; }
+                Text { text: "NeoUltront 0.8.0"; color: #66758a; font-size: 10px; vertical-alignment: center; }
+            }
+        }
+    }
+}
