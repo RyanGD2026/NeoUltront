@@ -195,12 +195,10 @@ impl NeoFontProject {
                 return Err(ProjectError::Invalid(format!("glyph '{name}' has invalid metrics")));
             }
             for command in &glyph.outline {
-                for point in command.points() {
-                    if !point.x.is_finite() || !point.y.is_finite() {
-                        return Err(ProjectError::Invalid(format!(
-                            "glyph '{name}' contains a non-finite outline point"
-                        )));
-                    }
+                if !command.has_only_finite_points() {
+                    return Err(ProjectError::Invalid(format!(
+                        "glyph '{name}' contains a non-finite outline point"
+                    )));
                 }
             }
         }
@@ -229,22 +227,6 @@ impl NeoFontProject {
 }
 
 impl GlyphCommand {
-    fn points(&self) -> &[GlyphPoint] {
-        match self {
-            Self::MoveTo(point) | Self::LineTo(point) => std::slice::from_ref(point),
-            Self::QuadTo(a, b) => {
-                // A small stack array cannot be returned as a slice; validate these variants below.
-                let _ = (a, b);
-                &[]
-            }
-            Self::CubicTo(a, b, c) => {
-                let _ = (a, b, c);
-                &[]
-            }
-            Self::Close => &[],
-        }
-    }
-
     fn has_only_finite_points(&self) -> bool {
         let finite = |p: &GlyphPoint| p.x.is_finite() && p.y.is_finite();
         match self {
