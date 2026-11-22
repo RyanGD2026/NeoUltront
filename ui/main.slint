@@ -4,8 +4,6 @@ export component MainWindow inherits Window {
     title: "NeoUltront 0.8.0";
     width: 1360px;
     height: 860px;
-    min-width: 1040px;
-    min-height: 680px;
     background: #0b0e14;
 
     in-out property <string> family-name: "Untitled Font";
@@ -118,10 +116,10 @@ export component MainWindow inherits Window {
                         border-radius: 8px;
 
                         Rectangle {
-                            x: 8%;
-                            y: 8%;
-                            width: 84%;
-                            height: 84%;
+                            x: 32px;
+                            y: 32px;
+                            width: parent.width - 64px;
+                            height: parent.height - 64px;
                             background: #121925;
                             border-width: 1px;
                             border-color: #273448;
@@ -129,7 +127,7 @@ export component MainWindow inherits Window {
 
                             Rectangle {
                                 x: 0px;
-                                y: 20%;
+                                y: parent.height * 0.2;
                                 width: 100%;
                                 height: 1px;
                                 background: #30425a;
@@ -137,7 +135,7 @@ export component MainWindow inherits Window {
                             }
                             Rectangle {
                                 x: 0px;
-                                y: 80%;
+                                y: parent.height * 0.8;
                                 width: 100%;
                                 height: 1px;
                                 background: #4b6686;
@@ -145,7 +143,7 @@ export component MainWindow inherits Window {
                             }
                             Rectangle {
                                 x: 0px;
-                                y: 90%;
+                                y: parent.height * 0.9;
                                 width: 100%;
                                 height: 1px;
                                 background: #30425a;
@@ -185,21 +183,21 @@ export component MainWindow inherits Window {
                             Text {
                                 text: "ASCENDER";
                                 x: 8px;
-                                y: 20% - 18px;
+                                y: parent.height * 0.2 - 18px;
                                 color: #7187a4;
                                 font-size: 9px;
                             }
                             Text {
                                 text: "BASELINE";
                                 x: 8px;
-                                y: 80% - 18px;
+                                y: parent.height * 0.8 - 18px;
                                 color: #7187a4;
                                 font-size: 9px;
                             }
                             Text {
                                 text: "DESCENDER";
                                 x: 8px;
-                                y: 90% - 18px;
+                                y: parent.height * 0.9 - 18px;
                                 color: #7187a4;
                                 font-size: 9px;
                             }
