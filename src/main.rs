@@ -169,6 +169,8 @@ fn main() -> Result<(), slint::PlatformError> {
     let pending_curve_points = Rc::new(RefCell::new(Vec::<GlyphPoint>::new()));
     let selected_node = Rc::new(RefCell::new(None::<(usize, u8)>));
     let node_drag_active = Rc::new(RefCell::new(false));
+    let undo_history = Rc::new(RefCell::new(Vec::<(String, Vec<GlyphCommand>)>::new()));
+    let redo_history = Rc::new(RefCell::new(Vec::<(String, Vec<GlyphCommand>)>::new()));
     let glyph_model = Rc::new(VecModel::from(vec![
         SharedString::from(".notdef"),
         SharedString::from("A"),
@@ -347,6 +349,8 @@ fn main() -> Result<(), slint::PlatformError> {
         let project = Rc::clone(&project);
         let selected_node = Rc::clone(&selected_node);
         let dragging = Rc::clone(&node_drag_active);
+        let undo = Rc::clone(&undo_history);
+        let redo = Rc::clone(&redo_history);
         ui.on_canvas_pointer_pressed(move |x, y| {
             let Some(ui) = weak_ui.upgrade() else { return };
             let selected = ui.get_selected_glyph().to_string();
@@ -356,6 +360,12 @@ fn main() -> Result<(), slint::PlatformError> {
                 .and_then(|glyph| nearest_glyph_point(glyph, point, 32.0));
             *selected_node.borrow_mut() = hit;
             *dragging.borrow_mut() = hit.is_some();
+            if hit.is_some() {
+                if let Some(glyph) = project.glyphs.get(&selected) {
+                    undo.borrow_mut().push((selected.clone(), glyph.outline.clone()));
+                    redo.borrow_mut().clear();
+                }
+            }
             if let Some((command_index, slot)) = hit {
                 if let Some(glyph) = project.glyphs.get(&selected) {
                     if let Some(node) = glyph.outline.get(command_index).and_then(|c| command_point(c, slot)) {
@@ -404,6 +414,8 @@ fn main() -> Result<(), slint::PlatformError> {
         let project = Rc::clone(&project);
         let tool_state = Rc::clone(&outline_tool);
         let pending = Rc::clone(&pending_curve_points);
+        let undo = Rc::clone(&undo_history);
+        let redo = Rc::clone(&redo_history);
         ui.on_canvas_point_added(move |x, y| {
             let Some(ui) = weak_ui.upgrade() else { return };
             let selected = ui.get_selected_glyph().to_string();
@@ -422,6 +434,8 @@ fn main() -> Result<(), slint::PlatformError> {
                 if points.len() == needed {
                     let has_start = glyph.outline.iter().any(|c| matches!(c, GlyphCommand::MoveTo(_) | GlyphCommand::LineTo(_) | GlyphCommand::QuadTo(_, _) | GlyphCommand::CubicTo(_, _, _)));
                     if has_start {
+                        undo.borrow_mut().push((selected.clone(), glyph.outline.clone()));
+                        redo.borrow_mut().clear();
                         if tool == OutlineTool::Quadratic {
                             glyph.outline.push(GlyphCommand::QuadTo(points[0], points[1]));
                         } else {
@@ -438,6 +452,8 @@ fn main() -> Result<(), slint::PlatformError> {
                 ui.set_glyph_handles_path(glyph_handles_to_svg_path(glyph).into());
                 return;
             }
+            undo.borrow_mut().push((selected.clone(), glyph.outline.clone()));
+            redo.borrow_mut().clear();
             let starts_contour = glyph
                 .outline
                 .last()
@@ -458,6 +474,8 @@ fn main() -> Result<(), slint::PlatformError> {
     {
         let weak_ui = ui.as_weak();
         let project = Rc::clone(&project);
+        let undo = Rc::clone(&undo_history);
+        let redo = Rc::clone(&redo_history);
         ui.on_close_contour_requested(move || {
             let Some(ui) = weak_ui.upgrade() else { return };
             let selected = ui.get_selected_glyph().to_string();
@@ -475,6 +493,8 @@ fn main() -> Result<(), slint::PlatformError> {
                 return;
             }
             if !matches!(glyph.outline.last(), Some(GlyphCommand::Close)) {
+                undo.borrow_mut().push((selected.clone(), glyph.outline.clone()));
+                redo.borrow_mut().clear();
                 glyph.outline.push(GlyphCommand::Close);
             }
             ui.set_glyph_path(glyph_to_svg_path(glyph).into());
@@ -485,16 +505,127 @@ fn main() -> Result<(), slint::PlatformError> {
     {
         let weak_ui = ui.as_weak();
         let project = Rc::clone(&project);
+        let undo = Rc::clone(&undo_history);
+        let redo = Rc::clone(&redo_history);
+        ui.on_undo_requested(move || {
+            let Some(ui) = weak_ui.upgrade() else { return };
+            let selected = ui.get_selected_glyph().to_string();
+            let Some((glyph_name, previous)) = undo.borrow_mut().pop() else {
+                ui.set_status_message("Nothing to undo".into());
+                return;
+            };
+            let mut project = project.borrow_mut();
+            if let Some(glyph) = project.glyphs.get_mut(&glyph_name) {
+                redo.borrow_mut().push((glyph_name.clone(), glyph.outline.clone()));
+                glyph.outline = previous;
+            }
+            if glyph_name == selected {
+                if let Some(glyph) = project.glyphs.get(&selected) {
+                    ui.set_glyph_path(glyph_to_svg_path(glyph).into());
+                    ui.set_glyph_handles_path(glyph_handles_to_svg_path(glyph).into());
+                }
+                ui.set_node_selected(false);
+            }
+            ui.set_status_message("Undo completed".into());
+        });
+    }
+
+    {
+        let weak_ui = ui.as_weak();
+        let project = Rc::clone(&project);
+        let undo = Rc::clone(&undo_history);
+        let redo = Rc::clone(&redo_history);
+        ui.on_redo_requested(move || {
+            let Some(ui) = weak_ui.upgrade() else { return };
+            let selected = ui.get_selected_glyph().to_string();
+            let Some((glyph_name, next)) = redo.borrow_mut().pop() else {
+                ui.set_status_message("Nothing to redo".into());
+                return;
+            };
+            let mut project = project.borrow_mut();
+            if let Some(glyph) = project.glyphs.get_mut(&glyph_name) {
+                undo.borrow_mut().push((glyph_name.clone(), glyph.outline.clone()));
+                glyph.outline = next;
+            }
+            if glyph_name == selected {
+                if let Some(glyph) = project.glyphs.get(&selected) {
+                    ui.set_glyph_path(glyph_to_svg_path(glyph).into());
+                    ui.set_glyph_handles_path(glyph_handles_to_svg_path(glyph).into());
+                }
+                ui.set_node_selected(false);
+            }
+            ui.set_status_message("Redo completed".into());
+        });
+    }
+
+    {
+        let weak_ui = ui.as_weak();
+        let project = Rc::clone(&project);
+        let selected_node = Rc::clone(&selected_node);
+        let undo = Rc::clone(&undo_history);
+        let redo = Rc::clone(&redo_history);
+        ui.on_delete_node_requested(move || {
+            let Some(ui) = weak_ui.upgrade() else { return };
+            let selected = ui.get_selected_glyph().to_string();
+            let Some((command_index, slot)) = *selected_node.borrow() else {
+                ui.set_status_message("Select a node first".into());
+                return;
+            };
+            let mut project = project.borrow_mut();
+            let Some(glyph) = project.glyphs.get_mut(&selected) else { return };
+            let Some(command) = glyph.outline.get(command_index).cloned() else { return };
+            if matches!(command, GlyphCommand::Close) {
+                ui.set_status_message("Contour-close markers cannot be deleted as nodes".into());
+                return;
+            }
+            undo.borrow_mut().push((selected.clone(), glyph.outline.clone()));
+            redo.borrow_mut().clear();
+            match command {
+                GlyphCommand::MoveTo(_) => {
+                    let end = glyph.outline[command_index + 1..].iter()
+                        .position(|c| matches!(c, GlyphCommand::Close | GlyphCommand::MoveTo(_)))
+                        .map(|offset| command_index + 1 + offset)
+                        .unwrap_or(glyph.outline.len());
+                    glyph.outline.drain(command_index..end);
+                }
+                GlyphCommand::LineTo(_) => { glyph.outline.remove(command_index); }
+                GlyphCommand::QuadTo(_, endpoint) if slot == 0 => {
+                    glyph.outline[command_index] = GlyphCommand::LineTo(endpoint);
+                }
+                GlyphCommand::QuadTo(_, _) => { glyph.outline.remove(command_index); }
+                GlyphCommand::CubicTo(_, _, endpoint) if slot < 2 => {
+                    glyph.outline[command_index] = GlyphCommand::LineTo(endpoint);
+                }
+                GlyphCommand::CubicTo(_, _, _) => { glyph.outline.remove(command_index); }
+                GlyphCommand::Close => unreachable!(),
+            }
+            *selected_node.borrow_mut() = None;
+            ui.set_node_selected(false);
+            ui.set_glyph_path(glyph_to_svg_path(glyph).into());
+            ui.set_glyph_handles_path(glyph_handles_to_svg_path(glyph).into());
+            ui.set_status_message("Selected node deleted".into());
+        });
+    }
+
+    {
+        let weak_ui = ui.as_weak();
+        let project = Rc::clone(&project);
+        let undo = Rc::clone(&undo_history);
+        let redo = Rc::clone(&redo_history);
         ui.on_undo_point_requested(move || {
             let Some(ui) = weak_ui.upgrade() else { return };
             let selected = ui.get_selected_glyph().to_string();
             let mut project = project.borrow_mut();
             let Some(glyph) = project.glyphs.get_mut(&selected) else { return };
-            if glyph.outline.pop().is_some() {
+            if !glyph.outline.is_empty() {
+                undo.borrow_mut().push((selected.clone(), glyph.outline.clone()));
+                redo.borrow_mut().clear();
+                glyph.outline.pop();
                 ui.set_glyph_path(glyph_to_svg_path(glyph).into());
-                ui.set_status_message(SharedString::from("Removed last outline command"));
+                ui.set_glyph_handles_path(glyph_handles_to_svg_path(glyph).into());
+                ui.set_status_message("Removed last outline command".into());
             } else {
-                ui.set_status_message(SharedString::from("No outline points to undo"));
+                ui.set_status_message("No outline points to remove".into());
             }
         });
     }
