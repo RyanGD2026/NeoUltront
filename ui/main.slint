@@ -34,6 +34,9 @@ export component MainWindow inherits Window {
     callback outline-tool-selected(string);
     callback close-contour-requested();
     callback undo-point-requested();
+    callback undo-requested();
+    callback redo-requested();
+    callback delete-node-requested();
 
     VerticalLayout {
         spacing: 0px;
@@ -245,6 +248,9 @@ export component MainWindow inherits Window {
                         Button { text: "Line"; clicked => root.outline-tool-selected("line"); }
                         Button { text: "Quadratic"; clicked => root.outline-tool-selected("quadratic"); }
                         Button { text: "Cubic"; clicked => root.outline-tool-selected("cubic"); }
+                        Button { text: "Undo"; clicked => root.undo-requested(); }
+                        Button { text: "Redo"; clicked => root.redo-requested(); }
+                        Button { text: "Delete node"; clicked => root.delete-node-requested(); }
                         Button { text: "Undo point"; clicked => root.undo-point-requested(); }
                         Button { text: "Close contour"; clicked => root.close-contour-requested(); }
                         Rectangle { horizontal-stretch: 1; }
