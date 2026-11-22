@@ -1,0 +1,12 @@
+[package]
+name = "neoultront"
+version = "0.1.0"
+edition = "2024"
+description = "A Rust-based font editor"
+  
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "neoultront"
+path = "src/main.rs"
