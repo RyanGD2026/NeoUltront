@@ -37,6 +37,8 @@ cargo test
 - Dynamic glyph list populated from the opened project
 - Dynamic glyph selection and new-glyph creation
 - Click-to-add outline points on the glyph canvas
+- Quadratic and cubic Bézier segment tools
+- Visible Bézier control-handle guide lines
 - Close-contour and undo-last-command controls
 - Live SVG-path rendering of the selected glyph
 - Editable family-name field
@@ -45,7 +47,7 @@ cargo test
 - Export the selected glyph outline to a standalone SVG file
 - Status messages for project operations
 
-The glyph canvas now supports basic polygon-outline construction by clicking points, closing contours, and undoing the last outline command. Dragging existing nodes, Bézier handle editing, zoom/pan, and live font shaping are not implemented yet.
+The glyph canvas now supports basic polygon-outline construction by clicking points, closing contours, and undoing the last outline command. Direct dragging of existing nodes/handles, zoom/pan, and live font shaping are not implemented yet. Bézier curves can be drawn with the Quadratic and Cubic tools by clicking the required control points and endpoint.
 
 ## CLI commands
 
@@ -57,4 +59,4 @@ cargo run -- validate MyFont.nufont
 
 ## Development status
 
-The project model, `.nufont` JSON persistence, validation, desktop shell, project workflow, and first point-based outline editor are in place. Font import, advanced node/curve editing, shaping/preview, and TTF/OTF/WOFF2 font export remain future milestones. Individual glyphs can currently be exported as SVG.
+The project model, `.nufont` JSON persistence, validation, desktop shell, project workflow, and first point-based outline editor are in place. Font import, direct node/handle dragging, shaping/preview, and compiled TTF/OTF/WOFF2 font export remain future milestones. Individual glyphs can currently be exported as SVG.
