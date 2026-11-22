@@ -42,6 +42,7 @@ cargo test
 - Editable family-name field
 - Font metric overview (units per em, ascender, descender)
 - Native open/save dialogs for `.nufont` files
+- Export the selected glyph outline to a standalone SVG file
 - Status messages for project operations
 
 The glyph canvas now supports basic polygon-outline construction by clicking points, closing contours, and undoing the last outline command. Dragging existing nodes, Bézier handle editing, zoom/pan, and live font shaping are not implemented yet.
@@ -56,4 +57,4 @@ cargo run -- validate MyFont.nufont
 
 ## Development status
 
-The project model, `.nufont` JSON persistence, validation, desktop shell, project workflow, and first point-based outline editor are in place. Font import, advanced node/curve editing, shaping/preview, and TTF/OTF/WOFF2 export remain future milestones.
+The project model, `.nufont` JSON persistence, validation, desktop shell, project workflow, and first point-based outline editor are in place. Font import, advanced node/curve editing, shaping/preview, and TTF/OTF/WOFF2 font export remain future milestones. Individual glyphs can currently be exported as SVG.
