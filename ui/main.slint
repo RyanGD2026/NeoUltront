@@ -22,6 +22,7 @@ export component MainWindow inherits Window {
     callback new-requested();
     callback open-requested();
     callback save-requested();
+    callback export-svg-requested();
     callback add-glyph-requested();
     callback glyph-selected(string);
     callback canvas-point-added(float, float);
@@ -62,6 +63,7 @@ export component MainWindow inherits Window {
                 Button { text: "New"; clicked => root.new-requested(); }
                 Button { text: "Open"; clicked => root.open-requested(); }
                 Button { text: "Save"; clicked => root.save-requested(); }
+                Button { text: "Export SVG"; clicked => root.export-svg-requested(); }
             }
         }
 
