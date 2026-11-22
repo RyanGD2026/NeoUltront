@@ -144,7 +144,20 @@ impl NeoFontProject {
                 codepoint: Some('A'),
                 advance_width: 650.0,
                 left_side_bearing: 20.0,
-                outline: Vec::new(),
+                outline: vec![
+                    GlyphCommand::MoveTo(GlyphPoint { x: 100.0, y: 0.0 }),
+                    GlyphCommand::LineTo(GlyphPoint { x: 500.0, y: 1000.0 }),
+                    GlyphCommand::LineTo(GlyphPoint { x: 900.0, y: 0.0 }),
+                    GlyphCommand::LineTo(GlyphPoint { x: 700.0, y: 0.0 }),
+                    GlyphCommand::LineTo(GlyphPoint { x: 600.0, y: 300.0 }),
+                    GlyphCommand::LineTo(GlyphPoint { x: 400.0, y: 300.0 }),
+                    GlyphCommand::LineTo(GlyphPoint { x: 300.0, y: 0.0 }),
+                    GlyphCommand::Close,
+                    GlyphCommand::MoveTo(GlyphPoint { x: 430.0, y: 450.0 }),
+                    GlyphCommand::LineTo(GlyphPoint { x: 570.0, y: 450.0 }),
+                    GlyphCommand::LineTo(GlyphPoint { x: 500.0, y: 680.0 }),
+                    GlyphCommand::Close,
+                ],
             },
         );
 
