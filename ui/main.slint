@@ -12,7 +12,8 @@ export component MainWindow inherits Window {
     in-out property <string> glyph-name: "A";
     in-out property <string> selected-glyph: "A";
     in-out property <string> status-message: "Ready";
-    in-out property <int> glyph-count: 1;
+    in-out property <int> glyph-count: 2;
+    in property <[string]> glyph-list;
     in-out property <int> units-per-em: 1000;
     in-out property <int> ascender: 800;
     in-out property <int> descender: -200;
@@ -73,12 +74,10 @@ export component MainWindow inherits Window {
                     Text { text: "FONT"; color: #718198; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; }
                     Text { text: root.family-name; color: #e8edf5; font-size: 16px; font-weight: 700; }
                     Text { text: "GLYPHS  (" + root.glyph-count + ")"; color: #718198; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
-                    Button { text: "A     LATIN CAPITAL A"; clicked => root.glyph-selected("A"); }
-                    Button { text: "B     LATIN CAPITAL B"; clicked => root.glyph-selected("B"); }
-                    Button { text: "C     LATIN CAPITAL C"; clicked => root.glyph-selected("C"); }
-                    Button { text: "a     LATIN SMALL A"; clicked => root.glyph-selected("a"); }
-                    Button { text: "b     LATIN SMALL B"; clicked => root.glyph-selected("b"); }
-                    Button { text: "zero  DIGIT ZERO"; clicked => root.glyph-selected("zero"); }
+                    for glyph in root.glyph-list: Button {
+                        text: glyph;
+                        clicked => root.glyph-selected(glyph);
+                    }
                     Rectangle { height: 1px; background: #273142; }
                     Button { text: "+  Add glyph"; clicked => root.add-glyph-requested(); }
                     Rectangle { vertical-stretch: 1; }
