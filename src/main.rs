@@ -341,11 +341,11 @@ fn main() -> Result<(), slint::PlatformError> {
 
             let svg_path = glyph_to_svg_path(&glyph);
             let svg = format!(
-                r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+                r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
   <title>{}</title>
   <path d="{}" fill="#000000" fill-rule="evenodd"/>
 </svg>
-"#,
+"##,
                 selected, svg_path
             );
             match std::fs::write(&path, svg) {
