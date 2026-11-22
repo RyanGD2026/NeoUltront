@@ -237,3 +237,47 @@ impl GlyphCommand {
         }
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_project_has_required_default_glyph() {
+        let project = NeoFontProject::new("Example Sans");
+        project.validate().unwrap();
+        assert!(project.glyphs.contains_key(".notdef"));
+        assert_eq!(project.metadata.units_per_em, 1000);
+    }
+
+    #[test]
+    fn project_round_trips_through_nufont_json() {
+        let path = std::env::temp_dir().join(format!(
+            "neoultront-{}-roundtrip.nufont",
+            std::process::id()
+        ));
+        let project = NeoFontProject::new("Roundtrip Sans");
+        project.save(&path).unwrap();
+        let loaded = NeoFontProject::load(&path).unwrap();
+        std::fs::remove_file(path).unwrap();
+        assert_eq!(loaded.metadata.family_name, "Roundtrip Sans");
+        assert!(loaded.glyphs.contains_key(".notdef"));
+    }
+
+    #[test]
+    fn rejects_non_finite_outline_points() {
+        let mut project = NeoFontProject::new("Invalid Font");
+        let glyph = Glyph {
+            codepoint: Some('A'),
+            advance_width: 600.0,
+            left_side_bearing: 0.0,
+            outline: vec![GlyphCommand::MoveTo(GlyphPoint {
+                x: f32::NAN,
+                y: 0.0,
+            })],
+        };
+        project.glyphs.insert("A".to_owned(), glyph);
+        assert!(project.validate().is_err());
+    }
+}
