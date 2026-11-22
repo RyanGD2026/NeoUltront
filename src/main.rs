@@ -321,6 +321,40 @@ fn main() -> Result<(), slint::PlatformError> {
         });
     }
 
+    {
+        let weak_ui = ui.as_weak();
+        let project = Rc::clone(&project);
+        ui.on_export_svg_requested(move || {
+            let Some(ui) = weak_ui.upgrade() else { return };
+            let selected = ui.get_selected_glyph().to_string();
+            let Some(glyph) = project.borrow().glyphs.get(&selected).cloned() else {
+                ui.set_status_message(format!("Glyph '{selected}' was not found").into());
+                return;
+            };
+            let Some(path) = rfd::FileDialog::new()
+                .add_filter("SVG vector image", &["svg"])
+                .set_file_name(format!("{selected}.svg"))
+                .save_file()
+            else {
+                return;
+            };
+
+            let svg_path = glyph_to_svg_path(&glyph);
+            let svg = format!(
+                r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <title>{}</title>
+  <path d="{}" fill="#000000" fill-rule="evenodd"/>
+</svg>
+"#,
+                selected, svg_path
+            );
+            match std::fs::write(&path, svg) {
+                Ok(()) => ui.set_status_message(format!("Exported {} as SVG", path.display()).into()),
+                Err(error) => ui.set_status_message(format!("SVG export failed: {error}").into()),
+            }
+        });
+    }
+
     println!("Starting NeoUltront {VERSION} desktop editor...");
     ui.run()
 }
