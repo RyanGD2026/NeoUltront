@@ -288,7 +288,8 @@ fn main() -> Result<(), slint::PlatformError> {
             let point_count = glyph
                 .outline
                 .iter()
-                .filter(|command| !matches!(command, GlyphCommand::Close))
+                .rev()
+                .take_while(|command| !matches!(command, GlyphCommand::Close))
                 .count();
 
             if point_count < 3 {
