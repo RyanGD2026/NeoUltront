@@ -42,6 +42,8 @@ cargo test
 - Click-to-select existing anchor points and Bézier control handles
 - Drag selected anchors and control handles directly on the glyph canvas
 - Live selected-node highlight while editing
+- Delete selected anchors and Bézier handles
+- Undo/redo outline edits, including node dragging
 - Close-contour and undo-last-command controls
 - Live SVG-path rendering of the selected glyph
 - Editable family-name field
