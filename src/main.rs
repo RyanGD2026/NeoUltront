@@ -11,6 +11,9 @@ use slint::{SharedString, VecModel};
 
 slint::include_modules!();
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum OutlineTool { Line, Quadratic, Cubic }
+
 fn glyph_to_svg_path(glyph: &Glyph) -> String {
     let mut path = String::new();
 
@@ -49,6 +52,26 @@ fn glyph_to_svg_path(glyph: &Glyph) -> String {
     path
 }
 
+fn glyph_handles_to_svg_path(glyph: &Glyph) -> String {
+    let mut path = String::new();
+    let mut current = GlyphPoint { x: 0.0, y: 0.0 };
+    for command in &glyph.outline {
+        match command {
+            GlyphCommand::MoveTo(p) | GlyphCommand::LineTo(p) => current = *p,
+            GlyphCommand::QuadTo(c, end) => {
+                path.push_str(&format!("M {} {} L {} {} ", current.x, 1000.0-current.y, c.x, 1000.0-c.y));
+                current = *end;
+            }
+            GlyphCommand::CubicTo(c1, c2, end) => {
+                path.push_str(&format!("M {} {} L {} {} M {} {} L {} {} ", current.x, 1000.0-current.y, c1.x, 1000.0-c1.y, end.x, 1000.0-end.y, c2.x, 1000.0-c2.y));
+                current = *end;
+            }
+            GlyphCommand::Close => {}
+        }
+    }
+    path
+}
+
 fn refresh_selected_glyph(ui: &MainWindow, project: &NeoFontProject) {
     let selected = ui.get_selected_glyph().to_string();
     let path = project
@@ -57,6 +80,8 @@ fn refresh_selected_glyph(ui: &MainWindow, project: &NeoFontProject) {
         .map(glyph_to_svg_path)
         .unwrap_or_default();
     ui.set_glyph_path(path.into());
+    let handles = project.glyphs.get(&selected).map(glyph_handles_to_svg_path).unwrap_or_default();
+    ui.set_glyph_handles_path(handles.into());
 }
 
 fn update_project_summary(
@@ -89,6 +114,8 @@ fn with_nufont_extension(mut path: PathBuf) -> PathBuf {
 fn main() -> Result<(), slint::PlatformError> {
     let ui = MainWindow::new()?;
     let project = Rc::new(RefCell::new(NeoFontProject::new("Untitled Font")));
+    let outline_tool = Rc::new(RefCell::new(OutlineTool::Line));
+    let pending_curve_points = Rc::new(RefCell::new(Vec::<GlyphPoint>::new()));
     let glyph_model = Rc::new(VecModel::from(vec![
         SharedString::from(".notdef"),
         SharedString::from("A"),
@@ -249,7 +276,24 @@ fn main() -> Result<(), slint::PlatformError> {
 
     {
         let weak_ui = ui.as_weak();
+        let tool_state = Rc::clone(&outline_tool);
+        let pending = Rc::clone(&pending_curve_points);
+        ui.on_outline_tool_selected(move |name| {
+            *tool_state.borrow_mut() = match name.as_str() {
+                "quadratic" => OutlineTool::Quadratic,
+                "cubic" => OutlineTool::Cubic,
+                _ => OutlineTool::Line,
+            };
+            pending.borrow_mut().clear();
+            if let Some(ui) = weak_ui.upgrade() { ui.set_status_message(format!("Outline tool: {name}").into()); }
+        });
+    }
+
+    {
+        let weak_ui = ui.as_weak();
         let project = Rc::clone(&project);
+        let tool_state = Rc::clone(&outline_tool);
+        let pending = Rc::clone(&pending_curve_points);
         ui.on_canvas_point_added(move |x, y| {
             let Some(ui) = weak_ui.upgrade() else { return };
             let selected = ui.get_selected_glyph().to_string();
@@ -260,6 +304,30 @@ fn main() -> Result<(), slint::PlatformError> {
                 x: x.clamp(0.0, 1000.0).round(),
                 y: y.clamp(0.0, 1000.0).round(),
             };
+            let tool = *tool_state.borrow();
+            if tool != OutlineTool::Line {
+                let mut points = pending.borrow_mut();
+                points.push(point);
+                let needed = if tool == OutlineTool::Quadratic { 2 } else { 3 };
+                if points.len() == needed {
+                    let has_start = glyph.outline.iter().any(|c| matches!(c, GlyphCommand::MoveTo(_) | GlyphCommand::LineTo(_) | GlyphCommand::QuadTo(_, _) | GlyphCommand::CubicTo(_, _, _)));
+                    if has_start {
+                        if tool == OutlineTool::Quadratic {
+                            glyph.outline.push(GlyphCommand::QuadTo(points[0], points[1]));
+                        } else {
+                            glyph.outline.push(GlyphCommand::CubicTo(points[0], points[1], points[2]));
+                        }
+                    } else {
+                        ui.set_status_message(SharedString::from("Add a starting point before a Bézier segment"));
+                    }
+                    points.clear();
+                } else {
+                    ui.set_status_message(format!("Bézier control point {}/{}", points.len(), needed).into());
+                }
+                ui.set_glyph_path(glyph_to_svg_path(glyph).into());
+                ui.set_glyph_handles_path(glyph_handles_to_svg_path(glyph).into());
+                return;
+            }
             let starts_contour = glyph
                 .outline
                 .last()
