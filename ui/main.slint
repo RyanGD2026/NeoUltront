@@ -12,6 +12,9 @@ export component MainWindow inherits Window {
     in-out property <string> status-message: "Ready";
     in-out property <string> glyph-path: "";
     in-out property <string> glyph-handles-path: "";
+    in-out property <bool> node-selected: false;
+    in-out property <float> selected-node-x: 0;
+    in-out property <float> selected-node-y: 0;
     in-out property <int> glyph-count: 2;
     in property <[string]> glyph-list;
     in-out property <int> units-per-em: 1000;
@@ -25,6 +28,9 @@ export component MainWindow inherits Window {
     callback add-glyph-requested();
     callback glyph-selected(string);
     callback canvas-point-added(float, float);
+    callback canvas-pointer-pressed(float, float);
+    callback canvas-pointer-moved(float, float);
+    callback canvas-pointer-released();
     callback outline-tool-selected(string);
     callback close-contour-requested();
     callback undo-point-requested();
@@ -170,14 +176,40 @@ export component MainWindow inherits Window {
                                 stroke: #f4b860;
                                 stroke-width: 5px;
                             }
+                            Rectangle {
+                                visible: root.node-selected;
+                                x: (root.selected-node-x / 1000) * parent.width - 7px;
+                                y: ((1000 - root.selected-node-y) / 1000) * parent.height - 7px;
+                                width: 14px;
+                                height: 14px;
+                                border-radius: 7px;
+                                background: #2478f2;
+                                border-width: 2px;
+                                border-color: #ffffff;
+                            }
                             TouchArea {
                                 width: 100%;
                                 height: 100%;
-                                clicked => {
-                                    root.canvas-point-added(
+                                pressed => {
+                                    root.canvas-pointer-pressed(
                                         (self.mouse-x / self.width) * 1000,
                                         1000 - ((self.mouse-y / self.height) * 1000)
                                     );
+                                }
+                                moved => {
+                                    root.canvas-pointer-moved(
+                                        (self.mouse-x / self.width) * 1000,
+                                        1000 - ((self.mouse-y / self.height) * 1000)
+                                    );
+                                }
+                                released => { root.canvas-pointer-released(); }
+                                clicked => {
+                                    if (!root.node-selected) {
+                                        root.canvas-point-added(
+                                            (self.mouse-x / self.width) * 1000,
+                                            1000 - ((self.mouse-y / self.height) * 1000)
+                                        );
+                                    }
                                 }
                             }
                             Text {
